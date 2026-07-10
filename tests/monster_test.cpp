@@ -1,5 +1,6 @@
 #include "action_time_scale.h"
 #include "avatar.h"
+#include "cata_utility.h"
 #include "catch/catch.hpp"
 #include "coordinates.h"
 #include "field_type.h"
@@ -13,6 +14,7 @@
 #include "monattack.h"
 #include "monster.h"
 #include "monster_action.h"
+#include "monster_hallucination.h"
 #include "options.h"
 #include "options_helpers.h"
 #include "player.h"
@@ -120,6 +122,54 @@ TEST_CASE("hallucination_electric_field_does_not_ignite_items", "[monster][hallu
     hallucination.process_turn();
 
     CHECK(here.get_field(fuel_pos, fd_fire) == nullptr);
+}
+
+TEST_CASE(
+    "only stalled hallucinations qualify for lifecycle expiry fallback",
+    "[monster][hallucination]") {
+    clear_all_state();
+    const auto cleanup = on_out_of_scope([]() { clear_all_state(); });
+    move_player_out_of_the_way();
+    build_test_map(ter_id("t_floor"));
+
+    const auto monster_pos = tripoint_bub_ms(60, 60, 0);
+    auto& test_monster = spawn_test_monster("mon_test_zero_speed_hallucination", monster_pos);
+    REQUIRE(test_monster.has_flag(MF_NOT_HALLU));
+    test_monster.hallucination = true;
+    test_monster.set_moves(0);
+
+    REQUIRE(test_monster.get_speed() == 0);
+    REQUIRE(test_monster.get_moves() == 0);
+
+    SECTION("a stalled hallucination needs lifecycle expiry") {
+        CHECK(monster_hallucination::needs_lifecycle_expiry(test_monster));
+    }
+
+    SECTION("real zero-speed monsters do not use hallucination expiry") {
+        test_monster.hallucination = false;
+
+        CHECK_FALSE(monster_hallucination::needs_lifecycle_expiry(test_monster));
+    }
+
+    SECTION("positive-speed hallucinations keep their action-path expiry") {
+        test_monster.set_speed_base(100);
+
+        REQUIRE(test_monster.get_speed() > 0);
+        CHECK_FALSE(monster_hallucination::needs_lifecycle_expiry(test_monster));
+    }
+
+    SECTION("zero-speed hallucinations with banked moves keep their action-path expiry") {
+        test_monster.set_moves(1);
+
+        CHECK_FALSE(monster_hallucination::needs_lifecycle_expiry(test_monster));
+    }
+
+    SECTION("dead hallucinations do not need lifecycle expiry") {
+        test_monster.set_hp(0);
+
+        REQUIRE(test_monster.is_dead());
+        CHECK_FALSE(monster_hallucination::needs_lifecycle_expiry(test_monster));
+    }
 }
 
 TEST_CASE("MONSTER_SPEED scales monster move credit", "[monster][speed]") {
