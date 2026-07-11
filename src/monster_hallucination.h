@@ -7,7 +7,7 @@ namespace monster_hallucination
 
 inline constexpr auto expiry_one_in = 25;
 
-/// Whether a hallucination cannot reach the action loop and needs lifecycle expiry.
+/// Whether a stalled zero-speed hallucination needs the lifecycle expiry fallback.
 auto needs_lifecycle_expiry( const monster &critter ) -> bool;
 
 } // namespace monster_hallucination

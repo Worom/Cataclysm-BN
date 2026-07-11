@@ -65,13 +65,5 @@
     "copy-from": "mon_test_death_drops_clear",
     "type": "MONSTER",
     "death_drops": ""
-  },
-  {
-    "id": "mon_test_zero_speed_hallucination",
-    "copy-from": "debug_mon",
-    "type": "MONSTER",
-    "name": { "str": "zero-speed hallucination test monster" },
-    "description": "This monster exists only for testing purposes.",
-    "speed": 0
   }
 ]

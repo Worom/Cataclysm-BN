@@ -1,6 +1,5 @@
 #include "action_time_scale.h"
 #include "avatar.h"
-#include "cata_utility.h"
 #include "catch/catch.hpp"
 #include "coordinates.h"
 #include "field_type.h"
@@ -127,14 +126,8 @@ TEST_CASE("hallucination_electric_field_does_not_ignite_items", "[monster][hallu
 TEST_CASE(
     "only stalled hallucinations qualify for lifecycle expiry fallback",
     "[monster][hallucination]") {
-    clear_all_state();
-    const auto cleanup = on_out_of_scope([]() { clear_all_state(); });
-    move_player_out_of_the_way();
-    build_test_map(ter_id("t_floor"));
-
-    const auto monster_pos = tripoint_bub_ms(60, 60, 0);
-    auto& test_monster = spawn_test_monster("mon_test_zero_speed_hallucination", monster_pos);
-    REQUIRE(test_monster.has_flag(MF_NOT_HALLU));
+    auto test_monster = monster(mtype_id("debug_mon"));
+    test_monster.set_speed_base(0);
     test_monster.hallucination = true;
     test_monster.set_moves(0);
 
